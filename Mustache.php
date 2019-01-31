@@ -52,6 +52,7 @@ class Mustache extends \Slim\View
 	public static $cssversion = null;
 	public static $jsversion = null;
 	public static $imgversion = null;
+	public static $locale = null;
 
     /**
      * @var array The options for the Mustache engine, see
@@ -100,7 +101,8 @@ class Mustache extends \Slim\View
 
             $parserOptions = array(
                 'loader' => new \Mustache_Loader_FilesystemLoader($this->getTemplatesDirectory()),
-                'cache' =>self:: $cacheDirectory,
+				'cache' =>self:: $cacheDirectory,
+				'show_empty'=>1,
 				'cache_file_mode' => 0666, // Please, configure your umask instead of doing this :)
 				'cache_lambda_templates' => true,
 				'helpers' => array(
@@ -143,13 +145,42 @@ class Mustache extends \Slim\View
                             return "";
 						$date=date('d/m/Y', strtotime($mustache->render($text)));
 						return $mustache->render($date);
-					},'date_it_ext' =>function($text, $mustache){
+					},'date_ext' =>function($text, $mustache){
                         if(!$mustache->render($text))
                             return "";
-                        setlocale(LC_TIME, "it_IT.UTF-8");
+                        setlocale(LC_ALL, Mustache::$locale);
                         $date=strftime('%A %d %B %Y',strtotime($mustache->render($text)));
 						return $mustache->render($date);
-					},'clean' => function($text, $mustache) {
+					},
+					'date_year' =>function($text, $mustache){
+                        if(!$mustache->render($text))
+                            return "";
+                        setlocale(LC_ALL, Mustache::$locale);
+                        $date=strftime('%Y',strtotime($mustache->render($text)));
+						return $mustache->render($date);
+					},
+					'date_month_name' =>function($text, $mustache){
+                        if(!$mustache->render($text))
+                            return "";
+                        setlocale(LC_ALL, Mustache::$locale);
+                        $date=strftime('%B',strtotime($mustache->render($text)));
+						return $mustache->render($date);
+					},
+					'date_day_name' =>function($text, $mustache){
+                        if(!$mustache->render($text))
+                            return "";
+                        setlocale(LC_ALL, Mustache::$locale);
+                        $date=strftime('%A',strtotime($mustache->render($text)));
+						return $mustache->render($date);
+					},
+					'date_day' =>function($text, $mustache){
+                        if(!$mustache->render($text))
+                            return "";
+                        setlocale(LC_ALL, Mustache::$locale);
+                        $date=strftime('%d',strtotime($mustache->render($text)));
+						return $mustache->render($date);
+					},
+					'clean' => function($text, $mustache) {
 						$output = iconv("utf-8", "ascii//TRANSLIT//IGNORE", $mustache->render($text)); 
 						//lets remove utf-8 special characters except blank spaces
 						$output = preg_replace("/^'|[^A-Za-z0-9\s-]|'$/", '', $output);
@@ -187,6 +218,17 @@ class Mustache extends \Slim\View
 						$filename=$path_parts['filename'];
 						$extension=$path_parts['extension'];
 						return $dirname."/thumbnails/".$filename.".".$extension;
+						}else{
+						return "";
+						}
+					},'smart'=>function($text, $mustache){
+						if(file_exists($mustache->render($text))){
+						$path_parts = pathinfo($mustache->render($text));
+						$dirname=$path_parts['dirname'];
+						$basepath=$path_parts['basename'];
+						$filename=$path_parts['filename'];
+						$extension=$path_parts['extension'];
+						return $dirname."/smart/".$filename.".".$extension;
 						}else{
 						return "";
 						}
